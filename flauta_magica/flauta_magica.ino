@@ -19,6 +19,7 @@ MultiControl touchPin[NUM_TOUCH_PADS] = {
   MultiControl (6, 0)
 };
 
+
 //** Setup Pot pin for multicontrol 
 MultiControl volPotPin13(13, 1); // set pin 13 for volume potentiometer
 
@@ -41,7 +42,7 @@ Env ampEnv[NUM_TOUCH_PADS];
 // Const and Global Variables
 const int touchThreshold = 10; //Umbral del Sensor
 const int pitches[] = {69, 72, 74, 76, 78, 80}; // Base pitches for each touch pin
-int16_t volPot = 250;  // Volume potentiometer
+int16_t volPot = 1000;  // Volume potentiometer
 unsigned long msNow, envTime, pitchTime;
 
 //** Init Osc and Envs
@@ -59,10 +60,10 @@ void handleTouch(int i, MultiControl &control, Osc &osc, Env &env, int pitch) {
   int touchRaw = touchPin[i].readTouch();
   if (touchRaw > touchThreshold) {
     // Serial.println(touchRaw);
-    while (touchFlags[i] == 0) {
+    if (touchFlags[i] == 0) {
       Serial.println("Touch detected on pin " + String(i));
       // int pitch = pitchQuantize(48 + i, scale, 0);
-      int pitch = pitch + random(4);
+      // int pitch = pitches + random(4);
       Serial.println("Pitch " + String(pitch));
       osc.setPitch(pitch);
       env.start();
@@ -97,10 +98,10 @@ void loop() {
   //** M16 audio s
   msNow = millis();
   
-  // Pitch loop
-  if (msNow > pitchTime) {
-    pitchTime = msNow + 1000;
-  } 
+  // // Pitch loop
+  // if (msNow > pitchTime) {
+  //   pitchTime = msNow + 1000;
+  // } 
 
   // Env loop
   if (msNow > envTime){
@@ -125,15 +126,14 @@ void loop() {
 */
 void audioUpdate() {
   // int16_t oscVal = (aOsc1.next() * ampEnv1.getValue())>>16;
-  int16_t oscVal = 0;
+  int32_t oscVal = 0;
 
   // Sum oscillator outputs
   for (int i = 0; i < NUM_TOUCH_PADS; ++i) {
-    oscVal += (aOsci[i].next() * ampEnv[i].getValue()) >> 16;
+    oscVal += (aOsci[i].next() * ampEnv[i].getValue()) >> 18;
   }
 
   int16_t leftVal = (oscVal * volPot)>>10;
   int16_t rightVal = leftVal;
   i2s_write_samples(leftVal, rightVal);
 }
-
